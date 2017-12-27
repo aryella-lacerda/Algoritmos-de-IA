@@ -3,9 +3,9 @@ from labirinto import Element, Index
 
 def busca(problema, tipo):
 
-    if tipo == 'P': from pilha import Pilha as Est
-    elif tipo == 'L': from fila import Fila as Est
-    else: from filaPrioridade import FilaPrioridade as Est
+    if tipo == 'P': from aux.pilha import Pilha as Est
+    elif tipo == 'L': from aux.fila import Fila as Est
+    else: from aux.filaPrioridade import FilaPrioridade as Est
 
     if tipo == 'C': candidatos = Est(problema.ordenarPorCusto)
     elif tipo == 'G': candidatos = Est(problema.ordenarPorHeuristicaGulosa)

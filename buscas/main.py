@@ -21,8 +21,6 @@ def main():
         labirintoG = deepcopy(labirintoL)
         labirintoA = deepcopy(labirintoL)
 
-        import pdb; pdb.set_trace() # add pdb here
-
         busca(labirintoL, "L")
         busca(labirintoP, "P")
         busca(labirintoC, "C")
