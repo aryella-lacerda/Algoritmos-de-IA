@@ -1,5 +1,6 @@
 from re import findall
 from sudoku import Sudoku
+from backtrack import backtrack
 
 def main():
 
@@ -15,9 +16,10 @@ def main():
             if linha:
                 matriz.append(linha)
 
+        import pdb; pdb.set_trace();
         sudoku = Sudoku(matriz)
         print(sudoku)
-
+        backtrack(sudoku)
 
 if __name__ == "__main__":
     main()

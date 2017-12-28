@@ -31,20 +31,20 @@ class Quadrado:
         if self.n is None: self.dominio = {1, 2, 3, 4, 5, 6, 7, 8, 9}
         else:              self.dominio = {n}
 
-    def tamDominio(self):
-        return len(self.dominio)
+    def dominioVazio(self):
+        return len(self.dominio) == 0
 
     def __repr__(self):
         return str(self.n)
 
 class Sudoku:
-    def __init__(self, matriz):
-        '''Recebe uma matriz 9x9 do tipo inteiro para processamento.'''
+    def __init__(self, sud):
+        '''Recebe uma sud 9x9 do tipo inteiro para processamento.'''
         self._nVarNaoAtribuidas = 0;
         self._quadrantes = self._initQuadrantes()
-        self.sudoku = self._processarMatriz(matriz)
+        self.sudoku = self._processarsud(sud)
 
-    def _initQuadrantes():
+    def _initQuadrantes(self):
         quadrantes = []
         i = 0
         for linhas in [[0, 1, 2], [3, 4, 5], [6, 7, 8]]:
@@ -58,7 +58,7 @@ class Sudoku:
     # Seria mais rápido, menos legível, e sem formatação
     #O(n*m)
     def __repr__(self):
-        matrizStr = []
+        sudStr = []
         for i, linha in enumerate(self.sudoku):
             linhaStr = []
             for j, quadrado in enumerate(linha):
@@ -66,15 +66,15 @@ class Sudoku:
                 if quadrado.n is not None:  linhaStr.append(str(quadrado))
                 else:                       linhaStr.append('x')
             if i % 3 == 0 and i != 0:
-                matrizStr.append('---------------------')
-            matrizStr.append(' '.join(linhaStr))
-        return '\n'.join(matrizStr)
+                sudStr.append('---------------------')
+            sudStr.append(' '.join(linhaStr))
+        return '\n'.join(sudStr)
 
     #O(n*m)
-    def _processarMatriz(self, matriz):
-        '''Recebe uma matriz 9x9 do tipo inteiro para processamento.'''
+    def _processarsud(self, sud):
+        '''Recebe uma sud 9x9 do tipo inteiro para processamento.'''
         tabuleiroProcessado = []
-        for i, linha in enumerate(matriz):
+        for i, linha in enumerate(sud):
             linhaProcessada = []
             for j, num in enumerate(linha):
 
@@ -132,17 +132,36 @@ class Sudoku:
 
     def atribuir(self, var, val):
         var.n = val
+        self._nVarNaoAtribuidas -= 1
+
+    def dominioContem(self, quadrado, val):
+        return quadrado.n is None and val in quadrado.dominio
 
     def propagar(self, var, val):
+        # Readability
         x, y = var.coordenada
-        matriz = self.sudoku # Readability
+        sud = self.sudoku
+        q = var.quadrante
 
         #Procurar val no dominio das variáveis não atribuídas daquela linha e remover
-        linha = [quad for quad in matriz[x] if (quad.n is None and val in quad.dominio)]
-        for quad in linha:
-            quad.dominio.remove(val)
+        linha = [quad for quad in sud[x] if dominioContem(quad, val)]
+        for quadrado in linha:
+            quadrado.dominio.remove(val)
+            if quadrado.dominioVazio():
+                return False
 
         #Procurar val no dominio das variáveis não atribuídas daquela coluna e remover
-        coluna = [matriz[i][j] for i in range(9) if (matriz[i][j].n is None and val in matriz[i][j].dominio)]
-        for quad in coluna:
-            quad.dominio.remove(val)
+        coluna = [sud[i][y] for i in range(9) if dominioContem(sud[i][y], val)]
+        for quadrado in coluna:
+            quadrado.dominio.remove(val)
+            if quadrado.dominioVazio():
+                return False
+
+        #Procurar val no dominio das variáveis não atribuídas daquele quadrante e remover
+        quadrante = [sud[i][j] for i in q.linhas for j in q.colunas if dominioContem(sud[i][j], val)]
+        for quadrado in quadrante:
+            quadrado.dominio.remove(val)
+            if quadrado.dominioVazio():
+                return False
+
+        return True
