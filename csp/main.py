@@ -14,6 +14,7 @@ def main():
             #Busque todo padrão de tamanho 1 composto por caracteres númericos, ou seja, busque só os digitos.
             linha = findall("\d", linha)
             if linha:
+                linha = [int(i) for i in linha]
                 matriz.append(linha)
 
         import pdb; pdb.set_trace();
