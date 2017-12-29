@@ -8,13 +8,11 @@ class csp(object):
     def show_domains(self):
         print('Dominio:')
         for key in self.domains:
-            print('%s :' %(key)),
+            print('%s :' %(key),end='')
             print(self.domains[key])
 
     def show_arcs(self):
         print('Vizinho:')
         for key in self.arcs:
-            print('%s :' %(key)),
+            print('%s :' %(key),end='')
             print(' '.join(self.arcs[key]))
-
-    
