@@ -1,6 +1,6 @@
 from re import findall
 from sudoku import Sudoku
-from backtrack import backtrack
+from backtrack import buscaBacktracking
 
 def main():
 
@@ -20,7 +20,7 @@ def main():
         import pdb; pdb.set_trace();
         sudoku = Sudoku(matriz)
         print(sudoku)
-        backtrack(sudoku)
+        buscaBacktracking(sudoku)
 
 if __name__ == "__main__":
     main()
