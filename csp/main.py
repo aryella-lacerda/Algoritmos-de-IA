@@ -17,9 +17,7 @@ def main():
                 linha = [int(i) for i in linha]
                 matriz.append(linha)
 
-        import pdb; pdb.set_trace();
         sudoku = Sudoku(matriz)
-        print(sudoku)
         buscaBacktracking(sudoku)
 
 if __name__ == "__main__":

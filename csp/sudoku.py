@@ -198,7 +198,7 @@ class Sudoku:
         '''
         #Uma heuristica é escolher o valor que causa menos restrições nas demais variáveis. Inicialmente sem ordenação, porque isso parece complicado de implementar.
         #LCV - Least Constraining Value
-        return var.dominio
+        return var.dominio.copy()
 
 #-----------------------------------------------
 # SEQUÊNCIA DE PASSOS PARA ATRIBUIR E PROPAGAR
@@ -257,13 +257,13 @@ class Sudoku:
             atribuicoesAutomaticas.append(prox)
 
             self._atribuirAutomatico(prox, prox.dominio.pop())
-            resultado = self.propagar(prox, prox.n):
+            resultado = self.propagar(prox, prox.n)
 
             if resultado.falha:
-                atribuicoesAutomaticas.extend(resultado.atribuicoesAutomaticas)
+                self._espera.clear()
+                atribuicoesAutomaticas.extend(resultado.atribuidosAutomaicamente)
                 return Propagacao(atribuicoesAutomaticas, True)
 
-        print(self)
         return Propagacao(atribuicoesAutomaticas, False)
 
     def _dominioContem(self, var, val):
@@ -296,14 +296,27 @@ class Sudoku:
 #------------------------------------------------------------------------------
 
     def removerAtribuicao(self, var):
-        #Se a atribuição precisou ser retirada, não há porque devolvê-la para o dominio.
-        var.dominio.update(var.retirados.pop())
+        '''
+        Recebe um Quadrado.
+        Retorna None.
+        '''
+        var.dominio.add(var.n)
+        reinserir = var.retirados.pop()
+        var.dominio.update(reinserir)
         var.n = None
         self._nVarNaoAtribuidas += 1
 
-    def _removerAtribuicaoAutomatica(self, var):
-        var.n = None
-        self._nVarNaoAtribuidas += 1
+    def removerAtribuicaoAutomatica(self, lista):
+        '''
+        Recebe uma lista de Quadrados.
+        Retorna None.
+        '''
+        #A atribuição automática foi feita porque só restou um valor no domínio.
+        #Logo, esse valor ainda se encontra no domínio, não precisa ser reinserido.
+        for quadrado in lista:
+            self.removerPropagacao(quadrado, quadrado.n)
+            self._nVarNaoAtribuidas += 1
+            quadrado.n = None
 
     def removerPropagacao(self, var, val):
         '''
@@ -336,4 +349,4 @@ class Sudoku:
             # Se val for o último valor retirados do domínio desse quadrado
             if self._retiradosContem(quadrado, val):
                 reinserir = quadrado.retirados.pop()
-                quadrado.dominio.add(reinserir)
+                quadrado.dominio.update(reinserir)
