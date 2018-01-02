@@ -1,7 +1,6 @@
 class Pilha:
     '''
     __str__ method assumes elements are not strings and can be converted to string.
-    Assumes objects being pushed are iterables.
     '''
 
     def __init__(self):
@@ -42,6 +41,8 @@ class Pilha:
             return None
         dado = self.lista[-1]
         del self.lista[-1]
+        if not self.lista:
+            self.top = None
         return dado
 
 if __name__ == '__main__':

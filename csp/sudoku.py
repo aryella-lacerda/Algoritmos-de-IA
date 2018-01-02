@@ -4,18 +4,20 @@ from fila import Fila
 Coordenada = namedtuple('Coordenada', 'x y')
 
 class Quadrante:
-    def __init__(self, n, linhas, colunas):
+    '''
+    Existe para faciliar a iteração pelos vars daquela coluna.
+    '''
+    def __init__(self, linhas, colunas):
         #Os indices das 3 linhas e das 3 colunas que compõem o quadrante.
-        #Para faciliar iteração pelos quadrados daquele quadrante.
-        self.n = n
+        #Para faciliar iteração pelos vars daquele quadrante.
         self.linhas = linhas
         self.colunas = colunas
 
 class Quadrado:
     def __init__(self, coordenada, quadrante, n = None):
         '''
-        Recebe o n do quadrado, caso seja informado. Por segurança, n = None por padrão.
-        Recebe uma Coordenada representado as coordenada do quadrado, e um Quadrante correspondente.
+        Recebe o n do var, caso seja informado. Por segurança, n = None por padrão.
+        Recebe uma Coordenada representado as coordenada do var, e um Quadrante correspondente.
         '''
         self.n = n
         self.coordenada = coordenada
@@ -33,13 +35,21 @@ class Quadrado:
     def dominioVazio(self):
         return len(self.dominio) == 0
 
-    def dominioUnico(self):
-        return len(self.dominio) == 1
-
     def __repr__(self):
         if self.n is None:
             return f"x - {self.dominio}"
         return f"{self.n}"
+
+class Estado:
+    def __init__(self, var):
+        '''
+        Recebe um Quadrado.
+        '''
+        self.var = var
+        self.afetadosPelaPropagacao = []
+
+    def __repr__(self):
+        return f"{self.var} - Propagados: {self.afetadosPelaPropagacao}"
 
 class Sudoku:
 
@@ -48,15 +58,14 @@ class Sudoku:
         self._countNaoAtribuidas = 0;
         self._iniciais = []
         self._quadrantes = self._initQuadrantes()
+        self._estadoAtual = None
         self.sudoku = self._processarMatriz(sud)
 
     def _initQuadrantes(self):
         quadrantes = []
-        i = 0
         for linhas in [[0, 1, 2], [3, 4, 5], [6, 7, 8]]:
             for colunas in [[0, 1, 2], [3, 4, 5], [6, 7, 8]]:
-                quadrantes.append( Quadrante(i, linhas, colunas) )
-                i += 1
+                quadrantes.append( Quadrante(linhas, colunas) )
         return quadrantes
 
     # A título de curiosidade, poderiamos ter feito isso:
@@ -67,10 +76,10 @@ class Sudoku:
         sudStr = []
         for i, linha in enumerate(self.sudoku):
             linhaStr = []
-            for j, quadrado in enumerate(linha):
+            for j, var in enumerate(linha):
                 if j % 3 == 0 and j != 0:
                     linhaStr.append('|')
-                linhaStr.append(str(quadrado))
+                linhaStr.append(str(var))
             if i % 3 == 0 and i != 0:
                 sudStr.append('---------------------')
             sudStr.append(' '.join(linhaStr))
@@ -124,9 +133,9 @@ class Sudoku:
         '''
         Recebe uma lista de Quadrados e um dígito.
         '''
-        quadrados = [quadrado for quadrado in lista if num in quadrado.dominio]
-        if len(quadrados) == 1:
-            return quadrados[0] #True
+        vars = [var for var in lista if num in var.dominio]
+        if len(vars) == 1:
+            return vars[0] #True
 
     def atribuirSingularidade(self, var, val):
         self.atribuir(var, val)
@@ -151,7 +160,7 @@ class Sudoku:
     #     sud = self.sudoku
     #     q = var.quadrante
     #
-    #     linha = [quadrado for quadrado in sud[x]]
+    #     linha = [var for var in sud[x]]
     #     coluna = [sud[i][y] for i in range(9)]
     #     quadrante = [sud[i][j] for i in q.linhas for j in q.colunas]
     #
@@ -162,27 +171,28 @@ class Sudoku:
         for i in range(9):
 
             q = self._quadrantes[i]
-            linha = [quadrado for quadrado in sud[i]] #Linha i
+            linha = [var for var in sud[i]] #Linha i
             coluna = [sud[i][j] for j in range(9)]  #Coluna i
             quadrante = [sud[a][b] for a in q.linhas for b in q.colunas] #Quadrante i
 
             self.applicarLinColQuad(linha, coluna, quadrante)
 
 #-----------------------------------------------
-# ALGORITMOS BACKTRACKING
+# FUNÇÕES BACKTRACKING
 #-----------------------------------------------
 
+    #TODO: FIX COUNT INICIAL
     def aplicarPropagacaoInicial(self):
-        for quadrado in self._iniciais:
-            self.propagar(quadrado, quadrado.n)
+        for var in self._iniciais:
+            self.propagar(var, var.n)
         self.hiddenSingleInicial()
 
     #O(n*m)
     def buscarVariavelNaoAtribuida(self):
         for linha in self.sudoku:
-            for quadrado in linha:
-                if quadrado.n is None:
-                    return quadrado
+            for var in linha:
+                if var.n is None:
+                    return var
         return None
 
     #O(1)
@@ -202,21 +212,27 @@ class Sudoku:
 # SEQUÊNCIA DE PASSOS PARA ATRIBUIR E PROPAGAR
 #-----------------------------------------------
 
-    def atribuir(self, var, val):
+    def atribuir(self, var, val, estado = None):
         '''
-        Recebe um objeto Quadrado e um dígito.
+        Recebe um objeto Quadrado, um dígito, e um objeto Estado.
         '''
+        #Setar o estado
+        self._estadoAtual = estado
+        self._countNaoAtribuidas -= 1
+
+        #Setar os valores retirados do domínio pela atribuição
         var.dominio.remove(val)
-        var.retirados.push(var.dominio) # Push the set onto the stack, not extend it.
+        if var.dominio: #Se o dominio restante não estiver vazio.
+            ret = var.dominio
+            var.retirados.push(ret)
+
+        #Setar domínio de atribuição (o próprio val)
         var.dominio = {val}
         var.n = val
-        self._countNaoAtribuidas -= 1
 
     def propagar(self, var, val):
         '''
         Recebe um Quadrado (var) e um dígito (val).
-        Se a propagação concluir sem erro, retorna Propagacao(atribuicoesAutomaticas, true).
-        Se a propagação gerar uma variável com domínio vazio, retorna Propagacao(atribuicoesAutomaticas, false).
         '''
         x, y = var.coordenada
 
@@ -243,68 +259,45 @@ class Sudoku:
     def _removerValorDoDominio(self, lista, val):
         '''
         Recebe uma lista de Quadrados.
-        Se restar somente um valor no domínio de alguma variável, coloca na lista de espera p/ atribuir automaticamente.
         Retorna True somente se alguma variável ficar com domínio vazio.
         Caso contrário, retorna None.
         '''
-        for quadrado in lista:
+        for var in lista:
 
-            #Retirar val somente dos quadrados em que val esteja no dominio.
-            if self._dominioContem(quadrado, val):
-                quadrado.dominio.remove(val)
+            #Retirar val somente dos vars em que val esteja no dominio.
+            if self._dominioContem(var, val):
+                var.dominio.remove(val)
 
-                # Propagação inicial não conta como retirar um valor do domínio.
-                # É como se o dominio nunca teve esse valor.
-                if quadrado not in self._iniciais:
-                    quadrado.retirados.push({val})
+                # Ou seja, se essa for uma propagação diferente da inicial
+                if self._estadoAtual is not None:
+                    self._estadoAtual.afetadosPelaPropagacao.append(var)
+                    var.retirados.push({val})
 
                 # Se restão nenhum valor no domínio, gerar erro.
-                if quadrado.dominioVazio():
+                if var.dominioVazio():
                     return True
 
 #------------------------------------------------------------------------------
 # SEQUÊNCIA DE PASSOS PARA DESFAZER ATRIBUIÇÃO E PROPAGAÇÃO
 #------------------------------------------------------------------------------
 
-    def restaurar(self, var, val, atriAuto):
+    def restaurar(self, estado):
         #Ordem inversa da sequência de atribuição:
-        self._removerPropagacao(var, val)
-        self._removerAtribuicao(var)
+        self._estadoAtual = estado
+        self._removerPropagacao()
+        self._removerAtribuicao()
 
-    def _removerAtribuicao(self, var):
-        '''
-        Recebe um Quadrado.
-        Retorna None.
-        '''
-        var.dominio.add(var.n)
-        reinserir = var.retirados.pop()
-        var.dominio.update(reinserir)
-        var.n = None
-        self._countNaoAtribuidas += 1
-
-    def _removerPropagacao(self, var, val):
+    def _removerPropagacao(self):
         '''
         Recebe um Quadrado (var) e um dígito (val)
         '''
-        x, y = var.coordenada
+        for var in self._estadoAtual.afetadosPelaPropagacao:
+        #Testar NONE?
+            reinserir = var.retirados.pop()
+            var.dominio.update(reinserir)
 
-        #Separar linha/coluna/quadrante.
-        linha = [quad for quad in self.sudoku[x]]
-        coluna = [self.sudoku[i][y] for i in range(9)]
-        quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
-
-        self._reinserirValorNoDominio(linha, val)
-        self._reinserirValorNoDominio(coluna, val)
-        self._reinserirValorNoDominio(quadrante, val)
-
-    def _reinserirValorNoDominio(self, lista, val):
-        '''
-        Recebe uma lista cujos quadrados cujo topo da pilha de retirados é o val.
-        Retira o topo da pilha, e reinsire-o no dominio.
-        '''
-        for var in lista:
-
-            # Se val for o último valor retirado do domínio dessa var
-            if val in var.retirados.top:
-                reinserir = var.retirados.pop()
-                var.dominio.update(reinserir)
+    def _removerAtribuicao(self):
+        self._estadoAtual.var.n = None
+        reinserir = self._estadoAtual.var.retirados.pop()
+        self._estadoAtual.var.dominio.update(reinserir)
+        self._countNaoAtribuidas += 1

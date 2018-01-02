@@ -1,6 +1,7 @@
-from sudoku import Propagacao
+from sudoku import Estado
 
 def buscaBacktracking(csp):
+    import pdb; pdb.set_trace();
     csp.aplicarPropagacaoInicial()
     print(csp)
     print()
@@ -13,9 +14,10 @@ def _backtrack(csp):
     #print(csp)
     var = csp.buscarVariavelNaoAtribuida()
     dominio = csp.ordenarValoresDoDominio(var)
+    estado = Estado(var)
 
     for val in dominio:
-        csp.atribuir(var, val)
+        csp.atribuir(var, val, estado)
 
         #O problema pode falhar de duas maneiras: pela propagação de consequências de uma atribuição, ou pelo backtracking.
 
@@ -34,11 +36,13 @@ def _backtrack(csp):
             print()
 
         #Em caso de falha
-        import pdb; pdb.set_trace();
-        csp.restaurar(var, val, resultado.atribuidosAutomaicamente)
+        csp.restaurar(estado)
         print(csp)
         print()
 
 
     print(csp)
+    print()
+    print('BACKTRACK')
+    print()
     return False
