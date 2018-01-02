@@ -181,7 +181,6 @@ class Sudoku:
 # FUNÇÕES BACKTRACKING
 #-----------------------------------------------
 
-    #TODO: FIX COUNT INICIAL
     def aplicarPropagacaoInicial(self):
         for var in self._iniciais:
             self.propagar(var, var.n)
@@ -218,17 +217,39 @@ class Sudoku:
         '''
         #Setar o estado
         self._estadoAtual = estado
+        if estado is not None:
+            self._estadoAtual.afetadosPelaPropagacao = []
         self._countNaoAtribuidas -= 1
 
         #Setar os valores retirados do domínio pela atribuição
         var.dominio.remove(val)
-        if var.dominio: #Se o dominio restante não estiver vazio.
-            ret = var.dominio
-            var.retirados.push(ret)
+        var.retirados.push(var.dominio)
 
         #Setar domínio de atribuição (o próprio val)
         var.dominio = {val}
         var.n = val
+
+    def foundError(self, var):
+        x, y = var.coordenada
+
+        # Separar linha/coluna/quadrante referentes àquela variável
+        linha = [quad for quad in self.sudoku[x]]
+        coluna = [self.sudoku[i][y] for i in range(9)]
+        quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
+
+        if self.error(linha): return True
+        if self.error(coluna): return True
+        if self.error(quadrante): return True
+
+    def error(self, lista):
+        for i in range(1,10):
+            rep = 0
+            for quad in lista:
+                if quad.n == i:
+                    rep += 1
+            if rep > 1:
+                return True
+        return False
 
     def propagar(self, var, val):
         '''
@@ -242,8 +263,6 @@ class Sudoku:
         quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
 
         # Retorna True (Falha!) se alguma variável ficar com dominio vazio.
-        # Se encontrar algum domínio único, inclui na lista de espera.
-        # Ou seja, nesse momento, nenhuma atribuição automática foi feita ainda.
         if self._removerValorDoDominio(linha, val):
             return False
         if self._removerValorDoDominio(coluna, val):
@@ -271,7 +290,7 @@ class Sudoku:
                 # Ou seja, se essa for uma propagação diferente da inicial
                 if self._estadoAtual is not None:
                     self._estadoAtual.afetadosPelaPropagacao.append(var)
-                    var.retirados.push({val})
+                    #var.retirados.push({val})
 
                 # Se restão nenhum valor no domínio, gerar erro.
                 if var.dominioVazio():
@@ -282,22 +301,19 @@ class Sudoku:
 #------------------------------------------------------------------------------
 
     def restaurar(self, estado):
-        #Ordem inversa da sequência de atribuição:
         self._estadoAtual = estado
-        self._removerPropagacao()
-        self._removerAtribuicao()
+        self._removerPropagacao(estado.afetadosPelaPropagacao, estado.var.n)
+        self._removerAtribuicao(estado.var)
 
-    def _removerPropagacao(self):
-        '''
-        Recebe um Quadrado (var) e um dígito (val)
-        '''
-        for var in self._estadoAtual.afetadosPelaPropagacao:
-        #Testar NONE?
-            reinserir = var.retirados.pop()
+    def _removerPropagacao(self, afetados, val):
+        for var in afetados:
+            var.dominio.add(val)
+        afetados = []
+
+    def _removerAtribuicao(self, var):
+        var.n = None
+        reinserir = var.retirados.pop()
+        # Se houver o que reinserir...
+        if reinserir:
             var.dominio.update(reinserir)
-
-    def _removerAtribuicao(self):
-        self._estadoAtual.var.n = None
-        reinserir = self._estadoAtual.var.retirados.pop()
-        self._estadoAtual.var.dominio.update(reinserir)
         self._countNaoAtribuidas += 1
