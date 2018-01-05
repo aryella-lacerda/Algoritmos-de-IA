@@ -1,6 +1,8 @@
 from re import findall
 from sudoku import Sudoku
 from backtrack import buscaBacktracking
+from minimosConflitos import minimosConflitos
+from copy import deepcopy
 
 def main():
 
@@ -17,9 +19,14 @@ def main():
                 linha = [int(i) for i in linha]
                 matriz.append(linha)
 
-        sudoku = Sudoku(matriz)
-        buscaBacktracking(sudoku)
-        print(sudoku)
+        sudoku1 = Sudoku(matriz)
+        sudoku2 = deepcopy(sudoku1)
+
+        # buscaBacktracking(sudoku1)
+        # print(sudoku1)
+
+        minimosConflitos(sudoku2)
+        print(sudoku2)
 
 if __name__ == "__main__":
     main()

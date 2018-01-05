@@ -1,7 +1,11 @@
 from collections import namedtuple
 from pilha import Pilha
 from fila import Fila
+from random import randint
+from math import inf
 Coordenada = namedtuple('Coordenada', 'x y')
+Val_e_Conflito = namedtuple('Val_e_Conflito', 'val conf')
+Conjunto = namedtuple('Conjunto', 'linha coluna quadrante')
 
 class Quadrante:
     '''
@@ -23,6 +27,7 @@ class Quadrado:
         self.coordenada = coordenada
         self.quadrante = quadrante
         self.retirados = Pilha()
+        self.conflitos = 0
 
         # Operações feitas sobre o domínio: adicionar, remover, contém/não contém
         # Dominio poderia ser representado por uma lista ou por um set.
@@ -37,8 +42,8 @@ class Quadrado:
 
     def __repr__(self):
         if self.n is None:
-            return f"x - {self.dominio}"
-        return f"{self.n}"
+            return f"[x -> {self.conflitos}]"
+        return f"[{self.n} -> {self.conflitos}]"
 
 class Estado:
     def __init__(self, var):
@@ -55,10 +60,12 @@ class Sudoku:
 
     def __init__(self, sud):
         '''Recebe uma sud 9x9 do tipo inteiro para processamento.'''
-        self._countNaoAtribuidas = 0;
-        self._iniciais = []
+        self._countNaoAtribuidas = 0
+        self._countConflitos = 0
+        self._iniciais = set()
         self._quadrantes = self._initQuadrantes()
         self._estadoAtual = None
+
         self.sudoku = self._processarMatriz(sud)
 
     def _initQuadrantes(self):
@@ -88,6 +95,7 @@ class Sudoku:
     #O(n*m)
     def _processarMatriz(self, sud):
         '''Recebe uma sud 9x9 do tipo inteiro para processamento.'''
+
         tabuleiroProcessado = []
         for i, linha in enumerate(sud):
             linhaProcessada = []
@@ -98,7 +106,7 @@ class Sudoku:
                 quad = self._defQuadrante(coord)
                 if num != 0:
                     elemento = Quadrado(coord, quad, num)
-                    self._iniciais.append(elemento)
+                    self._iniciais.add(elemento)
                 else:
                     elemento = Quadrado(coord, quad, None)
                     self._countNaoAtribuidas += 1
@@ -177,6 +185,84 @@ class Sudoku:
 
             self.applicarLinColQuad(linha, coluna, quadrante)
 
+    def _getConjunto(self, var):
+        x, y = var.coordenada
+
+        linha = [quad for quad in self.sudoku[x]]
+        coluna = [self.sudoku[i][y] for i in range(9)]
+        quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
+
+        conjunto = set().union(linha, coluna, quadrante)
+        conjunto.remove(var)
+        return conjunto
+
+#-----------------------------------------------
+# FUNÇÕES MÍNIMOS CONFLITOS
+#-----------------------------------------------
+
+    def _definirConflitos(self):
+        for linha in self.sudoku:
+            for var in linha:
+                if var not in self._iniciais:
+                    var.conflitos = self._contabilizarConflitos(var, var.n)
+                    self._countConflitos += var.conflitos
+
+    def _definirValores(self):
+        for linha in self.sudoku:
+            for var in linha:
+                if var not in self._iniciais:
+                    var.n = randint(1,9)
+                    self._countNaoAtribuidas -= 1
+
+    def atribuirEstadoAleatorio(self):
+        self._definirValores()
+        self._definirConflitos()
+
+    def atribuirMC(self, var, val, conf):
+        self._countConflitos -= var.conflitos
+        var.n = val
+        var.conflitos = conf
+        self._countConflitos += var.conflitos
+        self._updateConflitos(var)
+
+    def _updateConflitos(self, var):
+        conjunto = self._getConjunto(var)
+        for elem in conjunto:
+            self._contabilizarConflitos(elem, elem.n)
+
+    def varEmConflito(self):
+        while True:
+            var = self.sudoku[randint(0,8)][randint(0,8)]
+            if var.conflitos > 0:
+                return var
+
+    def valQueMinizaConflito(self, var):
+        minVal = None
+        minConf = inf
+        for val in var.dominio:
+            conf = self._contabilizarConflitos(var, val)
+            if conf < minConf:
+                minConf = conf
+                minVal = val
+        return (minVal, minConf)
+
+    def _testeDeConflito(self, var1, var2, a, b):
+        conflitos = 0
+        if a is not None and b is not None:
+            if a == b and var1 != var2:
+                conflitos = 1
+        return conflitos
+
+    def _contabilizarConflitos(self, var, n):
+        x, y = var.coordenada
+        conflitos = 0
+        conjunto = self._getConjunto(var)
+
+        for elem in conjunto:
+            conflitos += self._testeDeConflito(var, elem, elem.n, n)
+
+        return conflitos
+
 #-----------------------------------------------
 # FUNÇÕES BACKTRACKING
 #-----------------------------------------------
@@ -196,7 +282,7 @@ class Sudoku:
 
     #O(1)
     def estadoFinal(self):
-        return self._countNaoAtribuidas == 0
+        return not self._countNaoAtribuidas and not self._countConflitos
 
     def ordenarValoresDoDominio(self, var):
         '''
@@ -217,6 +303,7 @@ class Sudoku:
         '''
         #Setar o estado
         self._estadoAtual = estado
+        self._countNaoAtribuidas -= 1
         if estado is not None:
             self._estadoAtual.afetadosPelaPropagacao = []
 
@@ -227,7 +314,6 @@ class Sudoku:
         #Setar domínio de atribuição (o próprio val)
         var.dominio = {val}
         var.n = val
-        self._countNaoAtribuidas -= 1
 
     # def foundError(self, var):
     #     x, y = var.coordenada
