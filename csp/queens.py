@@ -73,7 +73,7 @@ class Queens:
 
     '''talvez essa parte aqui nem precise
     def verticalCheck(self,column): #line é uma lista
-        return sum(column) # se for > 1 tem alguma rainha na vertica
+        return sum(column) # se for > 1 tem alguma rainha na vertical
     '''
     def attacks(column, i ,j):
         #quando coloca uma rainha rainha em uma linha ela passa a ser ignorada

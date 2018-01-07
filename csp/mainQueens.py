@@ -41,7 +41,7 @@ def readFile():
                 gameBoard.append(line.split(' '))
 
         #for line in gameBoard:
-        #    print(checkQueen(line))
+        #print(checkQueen(line))
 
         print(gameBoard)
         constrainsViolated(gameBoard)
