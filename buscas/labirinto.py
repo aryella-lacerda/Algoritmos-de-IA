@@ -1,5 +1,6 @@
 from collections import namedtuple
 from math import sqrt, fabs, inf
+from random import randint
 Index = namedtuple('Index', 'n m')
 
 class Element:
@@ -14,10 +15,11 @@ class Element:
         self.weightOfLeastCostlyPath = inf
 
         #Heuristica gulosa
-        self.dist = 0
+        self.distMan = 0
+        self.distEuc = 0
 
     def __str__(self):
-        return f"({self.element}) C: {self.weightOfLeastCostlyPath}"
+        return f"{self.element}"
 
     def __iter__(self):
         for i in range(1):
@@ -53,7 +55,7 @@ class Labirinto:
         for line in self._labrinth:
             currentLine = []
             for element in line:
-                currentLine.append(str(element.element))
+                currentLine.append(str(element))
             totalLines.append(' '.join(currentLine))
         return '\n'.join(totalLines)
 
@@ -82,6 +84,13 @@ class Labirinto:
         y = fabs(m-self._finalState.index.m)
         return x + y
 
+    def _defineEuclidianDistance(self, element):
+        '''Recebe um Elemento'''
+        n, m = element.index
+        x = fabs(n-self._finalState.index.n) ** 2
+        y = fabs(m-self._finalState.index.m) ** 2
+        return sqrt(x + y)
+
     def _processLabrinth(self):
         ''' O(n*m) '''
         processedLabrinth = []
@@ -100,7 +109,8 @@ class Labirinto:
         if self._finalState is not None:
             for line in self._labrinth:
                 for element in line:
-                    element.dist = self._defineManhattanDistance(element)
+                    element.distMan = self._defineManhattanDistance(element)
+                    element.distEuc = self._defineEuclidianDistance(element)
 
     def _retrieveElement(self, index):
         ''' Recieves an Index (2-tuple named n,m) and returns a reference to a _labrinth Element. '''
@@ -178,11 +188,17 @@ class Labirinto:
     def ordenarPorCusto(self, a, b):
         return a.weightOfLeastCostlyPath < b.weightOfLeastCostlyPath
 
-    def ordenarPorHeuristicaGulosa(self, a, b):
-        return a.dist < b.dist
+    def ordenarPorHeuristicaGulosa1(self, a, b):
+        return a.distMan < b.distMan
 
-    def ordenarPorSoma(self, a, b):
-        return a.weightOfLeastCostlyPath + a.dist < b.weightOfLeastCostlyPath + b.dist
+    def ordenarPorHeuristicaGulosa2(self, a, b):
+        return a.distEuc < b.distEuc
+
+    def ordenarPorSoma1(self, a, b):
+        return a.weightOfLeastCostlyPath + a.distMan < b.weightOfLeastCostlyPath + b.distMan
+
+    def ordenarPorSoma2(self, a, b):
+        return a.weightOfLeastCostlyPath + a.distEuc < b.weightOfLeastCostlyPath + b.distEuc
 
     def estadoFinal(self, current):
         if self._finalState is None:

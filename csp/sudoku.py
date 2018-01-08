@@ -1,11 +1,10 @@
 from collections import namedtuple
 from pilha import Pilha
 from fila import Fila
-from random import randint
+from random import randint, choice
 from math import inf
 Coordenada = namedtuple('Coordenada', 'x y')
 Val_e_Conflito = namedtuple('Val_e_Conflito', 'val conf')
-Conjunto = namedtuple('Conjunto', 'linha coluna quadrante')
 
 class Quadrante:
     '''
@@ -65,7 +64,7 @@ class Sudoku:
         self._iniciais = set()
         self._quadrantes = self._initQuadrantes()
         self._estadoAtual = None
-
+        self._propagacaoInicial = True
         self.sudoku = self._processarMatriz(sud)
 
     def _initQuadrantes(self):
@@ -211,7 +210,7 @@ class Sudoku:
         for linha in self.sudoku:
             for var in linha:
                 if var not in self._iniciais:
-                    var.n = randint(1,9)
+                    var.n = choice(tuple(var.dominio))
                     self._countNaoAtribuidas -= 1
 
     def atribuirEstadoAleatorio(self):
@@ -233,7 +232,7 @@ class Sudoku:
     def varEmConflito(self):
         while True:
             var = self.sudoku[randint(0,8)][randint(0,8)]
-            if var.conflitos > 0:
+            if var.conflitos > 0 or var not in self._iniciais:
                 return var
 
     def valQueMinizaConflito(self, var):
@@ -244,6 +243,12 @@ class Sudoku:
             if conf < minConf:
                 minConf = conf
                 minVal = val
+
+        #Para evitar que o mesmo valor seja reatribuído várias vezes para uma mesma variável
+        if minVal == var.n:
+            minVal = choice(tuple(var.dominio))
+            minConf = self._contabilizarConflitos(var, minVal)
+
         return (minVal, minConf)
 
     def _testeDeConflito(self, var1, var2, a, b):
@@ -271,6 +276,7 @@ class Sudoku:
         for var in self._iniciais:
             self.propagar(var, var.n)
         self.hiddenSingleInicial()
+        self._propagacaoInicial = False
 
     #O(n*m)
     def buscarVariavelNaoAtribuida(self):
@@ -304,8 +310,10 @@ class Sudoku:
         #Setar o estado
         self._estadoAtual = estado
         self._countNaoAtribuidas -= 1
-        if estado is not None:
+        if not self._propagacaoInicial:
             self._estadoAtual.afetadosPelaPropagacao = []
+        else:
+            self._iniciais.add(var)
 
         #Setar os valores retirados do domínio pela atribuição
         var.dominio.remove(val)
