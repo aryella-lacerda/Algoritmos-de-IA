@@ -6,7 +6,7 @@ from copy import deepcopy
 
 def main():
 
-    with open("sudEasy.txt") as entrada:
+    with open("sud.txt") as entrada:
 
         matriz = []
         linhas = entrada.readlines()

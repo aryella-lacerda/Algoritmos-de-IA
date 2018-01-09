@@ -4,7 +4,6 @@ from fila import Fila
 from random import randint, choice
 from math import inf
 Coordenada = namedtuple('Coordenada', 'x y')
-Val_e_Conflito = namedtuple('Val_e_Conflito', 'val conf')
 
 class Quadrante:
     '''
@@ -203,7 +202,7 @@ class Sudoku:
         for linha in self.sudoku:
             for var in linha:
                 if var not in self._iniciais:
-                    var.conflitos = self._contabilizarConflitos(var, var.n)
+                    var.conflitos = self._getConflitos(var, var.n)
                     self._countConflitos += var.conflitos
 
     def _definirValores(self):
@@ -226,28 +225,32 @@ class Sudoku:
 
     def _updateConflitos(self, var):
         conjunto = self._getConjunto(var)
+
         for elem in conjunto:
-            self._contabilizarConflitos(elem, elem.n)
+            nAntigo = elem.conflitos
+            nNovo = self._getConflitos(elem, elem.n)
+            elem.conflitos = nNovo
+            self._countConflitos -= nAntigo
+            self._countConflitos += nNovo
 
     def varEmConflito(self):
         while True:
             var = self.sudoku[randint(0,8)][randint(0,8)]
-            if var.conflitos > 0 or var not in self._iniciais:
+            if var.conflitos > 0:
                 return var
 
     def valQueMinizaConflito(self, var):
         minVal = None
         minConf = inf
         for val in var.dominio:
-            conf = self._contabilizarConflitos(var, val)
+            conf = self._getConflitos(var, val)
             if conf < minConf:
                 minConf = conf
                 minVal = val
 
-        #Para evitar que o mesmo valor seja reatribuído várias vezes para uma mesma variável
         if minVal == var.n:
             minVal = choice(tuple(var.dominio))
-            minConf = self._contabilizarConflitos(var, minVal)
+            minConf = self._getConflitos(var, minVal)
 
         return (minVal, minConf)
 
@@ -258,10 +261,10 @@ class Sudoku:
                 conflitos = 1
         return conflitos
 
-    def _contabilizarConflitos(self, var, n):
+    def _getConflitos(self, var, n):
         x, y = var.coordenada
-        conflitos = 0
         conjunto = self._getConjunto(var)
+        conflitos = 0
 
         for elem in conjunto:
             conflitos += self._testeDeConflito(var, elem, elem.n, n)

@@ -10,7 +10,7 @@ def busca(problema, tipo, heuristica = None):
     if heuristica == 1:
         tec = problema.ordenarPorHeuristicaGulosa1
         soma = problema.ordenarPorSoma1
-    else:
+    elif heuristica == 2:
         tec = problema.ordenarPorHeuristicaGulosa2
         soma = problema.ordenarPorSoma2
 
