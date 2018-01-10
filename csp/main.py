@@ -6,7 +6,7 @@ from copy import deepcopy
 
 def main():
 
-    with open("sud.txt") as entrada:
+    with open("sudHard.txt") as entrada:
 
         matriz = []
         linhas = entrada.readlines()
@@ -22,12 +22,15 @@ def main():
         sudoku1 = Sudoku(matriz)
         sudoku2 = deepcopy(sudoku1)
 
-        buscaBacktracking(sudoku1)
+        expan, backt = buscaBacktracking(sudoku1)
         print(sudoku1)
-        print()
+        print(f'EXPANÇÕES: {expan}')
+        print(f'BACKTRACKS: {backt}')
 
-        minimosConflitos(sudoku2)
+        niter = minimosConflitos(sudoku2)
+        print(niter)
         print(sudoku2)
+        print(f'ITERAÇÕES: {niter}')
 
 if __name__ == "__main__":
     main()

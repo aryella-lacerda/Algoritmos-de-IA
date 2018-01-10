@@ -293,13 +293,13 @@ class Sudoku:
         Retorna uma lista com seu domínio, ordenado.
         '''
         #LCV - Least Constraining Value
-        conflitos = []
+        conf = []
         for val in var.dominio:
-            conflitos.append(Conflitos(val, self._getConflitos(var, val))
+            conf.append(Conflitos(val, self._getConflitos(var, val)))
 
-        conflitos.sort(key=lambda x: x.conf)
-        conflitos = [x.val for x in conflitos]
-        return conflitos
+        conf.sort(key=lambda x: x.conf)
+        conf = [x.val for x in conf]
+        return conf
 
 #-----------------------------------------------
 # SEQUÊNCIA DE PASSOS PARA ATRIBUIR E PROPAGAR
@@ -376,4 +376,3 @@ class Sudoku:
         if reinserir:
             var.dominio.update(reinserir)
         self._countNaoAtribuidas += 1
-        

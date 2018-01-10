@@ -1,11 +1,18 @@
 from sudoku import Estado
 
+expan = 0
+backtrack = 0
+
 def buscaBacktracking(csp):
-    import pdb; pdb.set_trace()
     csp.aplicarPropagacaoInicial()
-    return _backtrack(csp)
+    _backtrack(csp)
+    return (expan, backtrack)
 
 def _backtrack(csp):
+    global expan, backtrack
+
+    expan += 1
+
     if csp.estadoFinal():
         return True
 
@@ -21,6 +28,9 @@ def _backtrack(csp):
             #Se o backtracking não falhar...
             if _backtrack(csp):
                 return True
+            else:
+                backtrack += 1
+
         #Em caso de falha...
         csp.restaurar(estado)
 
