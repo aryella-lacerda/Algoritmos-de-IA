@@ -1,6 +1,7 @@
 from sudoku import Estado
 
 def buscaBacktracking(csp):
+    import pdb; pdb.set_trace()
     csp.aplicarPropagacaoInicial()
     return _backtrack(csp)
 
