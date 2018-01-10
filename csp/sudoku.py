@@ -122,7 +122,7 @@ class Sudoku:
 
 
 #-----------------------------------------------
-<<<<<<< HEAD
+
 # HIDDEN SINGLE
 #-----------------------------------------------
 
@@ -171,7 +171,7 @@ class Sudoku:
 #-----------------------------------------------
 # FUNÇÕES MÍNIMOS CONFLITOS
 #-----------------------------------------------
-=======
+
 # FUNÇÕES MÍNIMOS CONFLITOS
 #-----------------------------------------------
 
@@ -187,7 +187,6 @@ class Sudoku:
                                  if filtrar(self.sudoku[i][j]))
 
         return chain(lin, col, qua)
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
 
     def _getConjunto(self, var, filtrar):
         ''' Recebe um Quadrado e uma função de filtro.'''
@@ -289,10 +288,8 @@ class Sudoku:
     def aplicarPropagacaoInicial(self):
         for var in self._iniciais:
             self.propagar(var, var.n)
-<<<<<<< HEAD
+
         self._hiddenSingleInicial()
-=======
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         self._propagacaoInicial = False
 
     #O(n*m)
@@ -322,10 +319,7 @@ class Sudoku:
 
     def atribuir(self, var, val, estado = None):
         ''' Recebe um Quadrado, um dígito, e um Estado.'''
-<<<<<<< HEAD
 
-=======
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         #Setar o estado
         self._estadoAtual = estado
         self._countNaoAtribuidas -= 1
@@ -344,17 +338,14 @@ class Sudoku:
 
     def propagar(self, var, val):
         '''Recebe um Quadrado e um dígito.'''
-<<<<<<< HEAD
 
         def _filtrar(elemento):
             return (elemento.n is None and val in elemento.dominio)
 
-=======
 
         def _filtrar(elemento):
             return (elemento.n is None and val in elemento.dominio)
 
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         conjunto = self._getConjunto(var, _filtrar)
 
         # Retorna True (Falha!) se alguma variável ficar com dominio vazio.
