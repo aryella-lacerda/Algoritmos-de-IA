@@ -4,6 +4,7 @@ from fila import Fila
 from random import randint, choice
 from math import inf
 from itertools import chain
+Conflitos = namedtuple('Conflitos', 'val conf')
 
 class Quadrante:
     '''Existe para faciliar a iteração pelos vars daquela coluna.'''
@@ -122,7 +123,6 @@ class Sudoku:
 
 
 #-----------------------------------------------
-<<<<<<< HEAD
 # HIDDEN SINGLE
 #-----------------------------------------------
 
@@ -171,23 +171,6 @@ class Sudoku:
 #-----------------------------------------------
 # FUNÇÕES MÍNIMOS CONFLITOS
 #-----------------------------------------------
-=======
-# FUNÇÕES MÍNIMOS CONFLITOS
-#-----------------------------------------------
-
-    def _getConjunto(self, var, filtrar):
-        ''' Recebe um Quadrado e uma função de filtro.'''
-
-        x, y = var.coordenada
-
-        lin = (self.sudoku[x][i] for i in range(9) if filtrar(self.sudoku[x][i]))
-        col = (self.sudoku[i][y] for i in range(9) if filtrar(self.sudoku[i][y]))
-        qua = (self.sudoku[i][j] for i in var.quadrante.linhas \
-                                 for j in var.quadrante.colunas \
-                                 if filtrar(self.sudoku[i][j]))
-
-        return chain(lin, col, qua)
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
 
     def _getConjunto(self, var, filtrar):
         ''' Recebe um Quadrado e uma função de filtro.'''
@@ -289,10 +272,7 @@ class Sudoku:
     def aplicarPropagacaoInicial(self):
         for var in self._iniciais:
             self.propagar(var, var.n)
-<<<<<<< HEAD
         self._hiddenSingleInicial()
-=======
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         self._propagacaoInicial = False
 
     #O(n*m)
@@ -312,9 +292,14 @@ class Sudoku:
         Recebe uma variável do tipo Quadrado.
         Retorna uma lista com seu domínio, ordenado.
         '''
-        #Uma heuristica é escolher o valor que causa menos restrições nas demais variáveis. Inicialmente sem ordenação, porque isso parece complicado de implementar.
         #LCV - Least Constraining Value
-        return var.dominio.copy()
+        conflitos = []
+        for val in var.dominio:
+            conflitos.append(Conflitos(val, self._getConflitos(var, val))
+
+        conflitos.sort(key=lambda x: x.conf)
+        conflitos = [x.val for x in conflitos]
+        return conflitos
 
 #-----------------------------------------------
 # SEQUÊNCIA DE PASSOS PARA ATRIBUIR E PROPAGAR
@@ -322,10 +307,7 @@ class Sudoku:
 
     def atribuir(self, var, val, estado = None):
         ''' Recebe um Quadrado, um dígito, e um Estado.'''
-<<<<<<< HEAD
 
-=======
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         #Setar o estado
         self._estadoAtual = estado
         self._countNaoAtribuidas -= 1
@@ -344,17 +326,10 @@ class Sudoku:
 
     def propagar(self, var, val):
         '''Recebe um Quadrado e um dígito.'''
-<<<<<<< HEAD
 
         def _filtrar(elemento):
             return (elemento.n is None and val in elemento.dominio)
 
-=======
-
-        def _filtrar(elemento):
-            return (elemento.n is None and val in elemento.dominio)
-
->>>>>>> db23e639fab49512bcccd5b103388768abbb0230
         conjunto = self._getConjunto(var, _filtrar)
 
         # Retorna True (Falha!) se alguma variável ficar com dominio vazio.
