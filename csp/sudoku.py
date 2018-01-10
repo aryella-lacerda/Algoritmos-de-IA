@@ -376,3 +376,4 @@ class Sudoku:
         if reinserir:
             var.dominio.update(reinserir)
         self._countNaoAtribuidas += 1
+        
