@@ -3,24 +3,19 @@ from pilha import Pilha
 from fila import Fila
 from random import randint, choice
 from math import inf
-Coordenada = namedtuple('Coordenada', 'x y')
+from itertools import chain
 
 class Quadrante:
-    '''
-    Existe para faciliar a iteração pelos vars daquela coluna.
-    '''
+    '''Existe para faciliar a iteração pelos vars daquela coluna.'''
+
     def __init__(self, linhas, colunas):
-        #Os indices das 3 linhas e das 3 colunas que compõem o quadrante.
-        #Para faciliar iteração pelos vars daquele quadrante.
+        '''Recebe duas listas contendo os indices das 3 linhas e das 3 colunas que compõem o quadrante.'''
         self.linhas = linhas
         self.colunas = colunas
 
 class Quadrado:
     def __init__(self, coordenada, quadrante, n = None):
-        '''
-        Recebe o n do var, caso seja informado. Por segurança, n = None por padrão.
-        Recebe uma Coordenada representado as coordenada do var, e um Quadrante correspondente.
-        '''
+        '''Recebe uma coordenada e um Quadrante correspondente. Se o valor n inicial não for informado, o padrão é None.'''
         self.n = n
         self.coordenada = coordenada
         self.quadrante = quadrante
@@ -45,9 +40,7 @@ class Quadrado:
 
 class Estado:
     def __init__(self, var):
-        '''
-        Recebe um Quadrado.
-        '''
+        '''Recebe um Quadrado.'''
         self.var = var
         self.afetadosPelaPropagacao = []
 
@@ -66,6 +59,7 @@ class Sudoku:
         self._propagacaoInicial = True
         self.sudoku = self._processarMatriz(sud)
 
+    #O(1)
     def _initQuadrantes(self):
         quadrantes = []
         for linhas in [[0, 1, 2], [3, 4, 5], [6, 7, 8]]:
@@ -73,9 +67,6 @@ class Sudoku:
                 quadrantes.append( Quadrante(linhas, colunas) )
         return quadrantes
 
-    # A título de curiosidade, poderiamos ter feito isso:
-    # return '\n'.join([' '.join([str(n) for n in lin]) for lin in self.sudoku])
-    # Seria mais rápido, menos legível, e sem formatação
     #O(n*m)
     def __repr__(self):
         sudStr = []
@@ -92,7 +83,7 @@ class Sudoku:
 
     #O(n*m)
     def _processarMatriz(self, sud):
-        '''Recebe uma sud 9x9 do tipo inteiro para processamento.'''
+        '''Recebe uma matriz 9x9 do tipo inteiro para processamento.'''
 
         tabuleiroProcessado = []
         for i, linha in enumerate(sud):
@@ -100,13 +91,13 @@ class Sudoku:
             for j, num in enumerate(linha):
 
                 #Configurando cada Quadrado individualmente
-                coord = Coordenada(i,j)
-                quad = self._defQuadrante(coord)
+                coor = (i,j)
+                quad = self._defQuadrante(coor)
                 if num != 0:
-                    elemento = Quadrado(coord, quad, num)
+                    elemento = Quadrado(coor, quad, num)
                     self._iniciais.add(elemento)
                 else:
-                    elemento = Quadrado(coord, quad, None)
+                    elemento = Quadrado(coor, quad, None)
                     self._countNaoAtribuidas += 1
 
                 linhaProcessada.append(elemento)
@@ -114,9 +105,7 @@ class Sudoku:
         return tabuleiroProcessado
 
     def _defQuadrante(self, coordenada):
-        '''
-        Recebe uma Coordenada, retorna um dos 9 Quadrantes do tabuleiro.
-        '''
+        '''Recebe uma coordenada, retorna um dos 9 Quadrantes do tabuleiro.'''
         x, y = coordenada
         if x >= 0 and x < 3:
             if y >= 0 and y < 3: return self._quadrantes[0]
@@ -132,77 +121,27 @@ class Sudoku:
             if y < 9: return self._quadrantes[8]
 
 #-----------------------------------------------
-# TÉCNICAS DE PROPAGAÇÃO
-#-----------------------------------------------
-
-    def existirSingularidade(self, lista, n):
-        '''
-        Recebe uma lista de Quadrados e um dígito.
-        '''
-        vars = [var for var in lista if n in var.dominio and var.n is None]
-        if len(vars) == 1:
-            return vars[0] #True
-
-    def atribuirSingularidade(self, var, val):
-        self.atribuir(var, val)
-        self.propagar(var, val)
-
-    def applicarLinColQuad(self, linha, coluna, quadrante):
-        for num in range(1,10):
-            singular = self.existirSingularidade(linha, num)
-            if singular:
-                self.atribuirSingularidade(singular, num)
-
-            singular = self.existirSingularidade(coluna, num)
-            if singular:
-                self.atribuirSingularidade(singular, num)
-
-            singular = self.existirSingularidade(quadrante, num)
-            if singular:
-                self.atribuirSingularidade(singular, num)
-
-    # def hiddenSingle(self, var):
-    #     x, y = var.coordenada
-    #     sud = self.sudoku
-    #     q = var.quadrante
-    #
-    #     linha = [var for var in sud[x]]
-    #     coluna = [sud[i][y] for i in range(9)]
-    #     quadrante = [sud[i][j] for i in q.linhas for j in q.colunas]
-    #
-    #     self.applicarLinColQuad(linha, coluna, quadrante)
-
-    def hiddenSingleInicial(self):
-        sud = self.sudoku
-        for i in range(9):
-
-            q = self._quadrantes[i]
-            linha = [var for var in sud[i]] #Linha i
-            coluna = [sud[i][j] for j in range(9)]  #Coluna i
-            quadrante = [sud[a][b] for a in q.linhas for b in q.colunas] #Quadrante i
-
-            self.applicarLinColQuad(linha, coluna, quadrante)
-
-    def _getConjunto(self, var):
-        x, y = var.coordenada
-
-        linha = [quad for quad in self.sudoku[x]]
-        coluna = [self.sudoku[i][y] for i in range(9)]
-        quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
-
-        conjunto = set().union(linha, coluna, quadrante)
-        conjunto.remove(var)
-        return conjunto
-
-#-----------------------------------------------
 # FUNÇÕES MÍNIMOS CONFLITOS
 #-----------------------------------------------
+
+    def _getConjunto(self, var, filtrar):
+        ''' Recebe um Quadrado e uma função de filtro.'''
+
+        x, y = var.coordenada
+
+        lin = (self.sudoku[x][i] for i in range(9) if filtrar(self.sudoku[x][i]))
+        col = (self.sudoku[i][y] for i in range(9) if filtrar(self.sudoku[i][y]))
+        qua = (self.sudoku[i][j] for i in var.quadrante.linhas \
+                                 for j in var.quadrante.colunas \
+                                 if filtrar(self.sudoku[i][j]))
+
+        return chain(lin, col, qua)
 
     def _definirConflitos(self):
         for linha in self.sudoku:
             for var in linha:
                 if var not in self._iniciais:
-                    var.conflitos = self._getConflitos(var, var.n)
+                    var.conflitos = self._getConflitos(var)
                     self._countConflitos += var.conflitos
 
     def _definirValores(self):
@@ -216,19 +155,28 @@ class Sudoku:
         self._definirValores()
         self._definirConflitos()
 
-    def atribuirMC(self, var, val, conf):
+    def atribuirMC(self, var, novo, conf):
+        antigo = var.n
         self._countConflitos -= var.conflitos
-        var.n = val
+        var.n = novo
         var.conflitos = conf
         self._countConflitos += var.conflitos
-        self._updateConflitos(var)
+        self._updateConflitos(var, novo, antigo)
 
-    def _updateConflitos(self, var):
-        conjunto = self._getConjunto(var)
+    def _updateConflitos(self, var, valNovo, valAntigo):
 
+        #Definir filtro dependendo dos valores novo e antigo da variável atual
+        def _filtrar(elemento):
+            ''' Recebe dois inteiros. '''
+            return ((elemento.n == valNovo or elemento.n == valAntigo) and elemento != var)
+
+        #Receber conjunto filtrado
+        conjunto = self._getConjunto(var, _filtrar)
+
+        #Recalcular conflitos somente para os elementos relevantes.
         for elem in conjunto:
             nAntigo = elem.conflitos
-            nNovo = self._getConflitos(elem, elem.n)
+            nNovo = self._getConflitos(elem)
             elem.conflitos = nNovo
             self._countConflitos -= nAntigo
             self._countConflitos += nNovo
@@ -254,20 +202,18 @@ class Sudoku:
 
         return (minVal, minConf)
 
-    def _testeDeConflito(self, var1, var2, a, b):
-        conflitos = 0
-        if a is not None and b is not None:
-            if a == b and var1 != var2:
-                conflitos = 1
-        return conflitos
+    def _getConflitos(self, var, n = None):
 
-    def _getConflitos(self, var, n):
-        x, y = var.coordenada
-        conjunto = self._getConjunto(var)
-        conflitos = 0
+        if n:
+            def _filtrar(elem):
+                return (elem.n and n == elem.n and var != elem)
+        else:
+            def _filtrar(elem):
+                return (var.n and elem.n and var.n == elem.n and var != elem)
 
-        for elem in conjunto:
-            conflitos += self._testeDeConflito(var, elem, elem.n, n)
+        conflitos = 0
+        for elem in self._getConjunto(var, _filtrar):
+            conflitos += 1
 
         return conflitos
 
@@ -278,7 +224,6 @@ class Sudoku:
     def aplicarPropagacaoInicial(self):
         for var in self._iniciais:
             self.propagar(var, var.n)
-        self.hiddenSingleInicial()
         self._propagacaoInicial = False
 
     #O(n*m)
@@ -307,9 +252,7 @@ class Sudoku:
 #-----------------------------------------------
 
     def atribuir(self, var, val, estado = None):
-        '''
-        Recebe um objeto Quadrado, um dígito, e um objeto Estado.
-        '''
+        ''' Recebe um Quadrado, um dígito, e um Estado.'''
         #Setar o estado
         self._estadoAtual = estado
         self._countNaoAtribuidas -= 1
@@ -326,72 +269,36 @@ class Sudoku:
         var.dominio = {val}
         var.n = val
 
-    # def foundError(self, var):
-    #     x, y = var.coordenada
-    #
-    #     # Separar linha/coluna/quadrante referentes àquela variável
-    #     linha = [quad for quad in self.sudoku[x]]
-    #     coluna = [self.sudoku[i][y] for i in range(9)]
-    #     quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
-    #
-    #     if self.error(linha): return True
-    #     if self.error(coluna): return True
-    #     if self.error(quadrante): return True
-    #
-    # def error(self, lista):
-    #     for i in range(1,10):
-    #         rep = 0
-    #         for quad in lista:
-    #             if quad.n == i:
-    #                 rep += 1
-    #         if rep > 1:
-    #             return True
-    #     return False
-
     def propagar(self, var, val):
-        '''
-        Recebe um Quadrado (var) e um dígito (val).
-        '''
-        x, y = var.coordenada
+        '''Recebe um Quadrado e um dígito.'''
 
-        # Separar linha/coluna/quadrante referentes àquela variável
-        linha = [quad for quad in self.sudoku[x]]
-        coluna = [self.sudoku[i][y] for i in range(9)]
-        quadrante = [self.sudoku[i][j] for i in var.quadrante.linhas for j in var.quadrante.colunas]
+        def _filtrar(elemento):
+            return (elemento.n is None and val in elemento.dominio)
+
+        conjunto = self._getConjunto(var, _filtrar)
 
         # Retorna True (Falha!) se alguma variável ficar com dominio vazio.
-        if self._removerValorDoDominio(linha, val):
-            return False
-        if self._removerValorDoDominio(coluna, val):
-            return False
-        if self._removerValorDoDominio(quadrante, val):
+        if self._removerValorDoDominio(conjunto, val):
             return False
 
         return True
 
-    def _dominioContem(self, var, val):
-        return var.n is None and val in var.dominio
-
-    def _removerValorDoDominio(self, lista, val):
+    def _removerValorDoDominio(self, conjunto, val):
         '''
-        Recebe uma lista de Quadrados.
+        Recebe um iterável.
         Retorna True somente se alguma variável ficar com domínio vazio.
         Caso contrário, retorna None.
         '''
-        for var in lista:
+        for var in conjunto:
+            var.dominio.remove(val)
 
-            #Retirar val somente dos vars em que val esteja no dominio.
-            if self._dominioContem(var, val):
-                var.dominio.remove(val)
+            # Ou seja, se essa for uma propagação diferente da inicial
+            if self._estadoAtual is not None:
+                self._estadoAtual.afetadosPelaPropagacao.append(var)
 
-                # Ou seja, se essa for uma propagação diferente da inicial
-                if self._estadoAtual is not None:
-                    self._estadoAtual.afetadosPelaPropagacao.append(var)
-                    #var.retirados.push({val})
-
-                # Se restão nenhum valor no domínio, gerar erro.
-                if var.dominioVazio():
-                    return True
+            # Se restão nenhum valor no domínio, gerar erro.
+            if var.dominioVazio():
+                return True
 
 #------------------------------------------------------------------------------
 # SEQUÊNCIA DE PASSOS PARA DESFAZER ATRIBUIÇÃO E PROPAGAÇÃO
