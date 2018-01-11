@@ -24,7 +24,7 @@ def main():
 
         expan, backt = buscaBacktracking(sudoku1)
         print(sudoku1)
-        print(f'EXPANÇÕES: {expan}')
+        print(f'EXPANSSÕES: {expan}')
         print(f'BACKTRACKS: {backt}')
 
         niter = minimosConflitos(sudoku2)
