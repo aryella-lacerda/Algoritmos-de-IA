@@ -9,6 +9,7 @@ class Element:
         self.element = element
         self.index = index
         self.moves = []
+        self.visited = False
 
         #Custo uniforme
         self.weight = weight #Custo de chegar ate ele
@@ -60,7 +61,7 @@ class Labirinto:
         return '\n'.join(totalLines)
 
     def _permittedSpace(self, candidate):
-        return not candidate.element == '#'
+        return ((not candidate.element == '#') and candidate.visited == False)
 
     def _implementSolution(self):
         current = self.estadoInicial
@@ -143,13 +144,15 @@ class Labirinto:
         candidates = []
         n, m = current.index
 
+        if current.visited:
+            return []
+
+        current.visited = True
         self._totalExpansions += 1
         self._costOfReachingLastExploredElement = current.weightOfLeastCostlyPath
-
-        # MAKE CANDIDATE IF:
-            # 1 - Move is within the bounds of the labirinth
-            # 2 - Move is permitted (not a wall)
-            # 3 - Move is the least costly way to reach that element
+        
+        if current.element != '!' or current.element != '@' or current.element != '$':
+            current.element = 'x'
 
         #Up ^
         if n-1 > -1:
